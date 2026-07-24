@@ -1,6 +1,8 @@
 // Client-side rendering and interaction for the Flask-backed Sudoku
 const SIZE = 9;
 let puzzle = [];
+let timerIntervalId = null;
+let elapsedSeconds = 0;
 
 function updateHintCount(count) {
   const hintCount = document.getElementById('hint-count');
@@ -12,6 +14,37 @@ function updateHintCount(count) {
 function getBoardInputs() {
   const boardDiv = document.getElementById('sudoku-board');
   return boardDiv.getElementsByTagName('input');
+}
+
+function formatTime(seconds) {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, '0');
+  const remainingSeconds = (safeSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function updateTimerDisplay() {
+  const timerDisplay = document.getElementById('timer-display');
+  if (timerDisplay) {
+    timerDisplay.textContent = formatTime(elapsedSeconds);
+  }
+}
+
+function stopTimer() {
+  if (timerIntervalId !== null) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  elapsedSeconds = 0;
+  updateTimerDisplay();
+  timerIntervalId = window.setInterval(() => {
+    elapsedSeconds += 1;
+    updateTimerDisplay();
+  }, 1000);
 }
 
 function createBoardElement() {
@@ -189,6 +222,8 @@ function refreshConflictState() {
 }
 
 async function newGame() {
+  startTimer();
+
   const difficultySelect = document.getElementById('difficulty');
   const difficulty = difficultySelect.value;
   const res = await fetch(`/new?difficulty=${encodeURIComponent(difficulty)}`);
@@ -224,6 +259,8 @@ async function checkSolution() {
     return;
   }
   const incorrect = new Set(data.incorrect.map(x => x[0] * SIZE + x[1]));
+  const isBoardComplete = board.every(row => row.every(cell => cell !== 0));
+
   for (let idx = 0; idx < inputs.length; idx++) {
     const inp = inputs[idx];
     if (inp.disabled) continue;
@@ -232,7 +269,9 @@ async function checkSolution() {
       inp.classList.add('incorrect');
     }
   }
-  if (incorrect.size === 0) {
+
+  if (incorrect.size === 0 && isBoardComplete) {
+    stopTimer();
     msg.style.color = '#388e3c';
     msg.innerText = 'Congratulations! You solved it!';
   } else {
