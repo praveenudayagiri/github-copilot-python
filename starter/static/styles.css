@@ -120,6 +120,45 @@ button:hover {
     color: #0f766e;
 }
 
+.leaderboard {
+    max-width: 640px;
+    margin: 0 auto 40px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.leaderboard h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.leaderboard-table th {
+    font-size: 0.9rem;
+    color: #4b5563;
+    text-transform: uppercase;
+}
+
+.leaderboard-empty {
+    text-align: center;
+    color: #6b7280;
+}
+
 .sudoku-cell.hinted {
     background: #d1fae5;
     color: #065f46;

@@ -26,6 +26,25 @@
     <output id="conflict-status" class="sr-only" aria-live="polite" aria-atomic="true">No conflicts detected.</output>
   </div>
   <div id="sudoku-board"></div>
+  <section class="leaderboard" aria-labelledby="leaderboard-title">
+    <h2 id="leaderboard-title">Top 10 Leaderboard</h2>
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th scope="col">Rank</th>
+          <th scope="col">Name</th>
+          <th scope="col">Time</th>
+          <th scope="col">Difficulty</th>
+          <th scope="col">Hints</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr>
+          <td colspan="5" class="leaderboard-empty">No completed games yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
   <script src="/static/main.js"></script>
 </body>
 </html>

@@ -1,10 +1,15 @@
 // Client-side rendering and interaction for the Flask-backed Sudoku
 const SIZE = 9;
+const STORAGE_KEY = 'sudoku-leaderboard-scores';
 let puzzle = [];
 let timerIntervalId = null;
 let elapsedSeconds = 0;
+let hintsUsed = 0;
+let leaderboard = [];
+let hasSavedScore = false;
 
 function updateHintCount(count) {
+  hintsUsed = count;
   const hintCount = document.getElementById('hint-count');
   if (hintCount) {
     hintCount.textContent = `Hints used: ${count}`;
@@ -221,7 +226,121 @@ function refreshConflictState() {
   updateConflictStatus(conflicts);
 }
 
+function loadLeaderboard() {
+  try {
+    const rawValue = window.localStorage.getItem(STORAGE_KEY);
+    if (!rawValue) {
+      leaderboard = [];
+      renderLeaderboard();
+      return;
+    }
+
+    const parsed = JSON.parse(rawValue);
+    if (!Array.isArray(parsed)) {
+      leaderboard = [];
+      renderLeaderboard();
+      return;
+    }
+
+    leaderboard = parsed
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+
+        const timeSeconds = Number(entry.timeSeconds);
+        const hintsUsedCount = Number(entry.hintsUsed);
+        const normalizedName = typeof entry.playerName === 'string' ? entry.playerName : '';
+        const normalizedDifficulty = typeof entry.difficulty === 'string' ? entry.difficulty : 'medium';
+
+        if (!Number.isFinite(timeSeconds) || timeSeconds < 0 || !Number.isFinite(hintsUsedCount) || hintsUsedCount < 0) {
+          return null;
+        }
+
+        return {
+          id: typeof entry.id === 'string' ? entry.id : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          playerName: normalizedName.trim() || 'Anonymous',
+          timeSeconds,
+          difficulty: normalizedDifficulty,
+          hintsUsed: hintsUsedCount
+        };
+      })
+      .filter(Boolean)
+      .sort((first, second) => first.timeSeconds - second.timeSeconds)
+      .slice(0, 10);
+  } catch (error) {
+    leaderboard = [];
+  }
+
+  renderLeaderboard();
+}
+
+function saveLeaderboard() {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leaderboard));
+  } catch (error) {
+    // Ignore storage errors so the game remains usable.
+  }
+}
+
+function renderLeaderboard() {
+  const leaderboardBody = document.getElementById('leaderboard-body');
+  if (!leaderboardBody) {
+    return;
+  }
+
+  if (leaderboard.length === 0) {
+    leaderboardBody.innerHTML = '<tr><td colspan="5" class="leaderboard-empty">No completed games yet.</td></tr>';
+    return;
+  }
+
+  leaderboardBody.innerHTML = leaderboard
+    .map((entry, index) => {
+      const rank = index + 1;
+      return `
+        <tr>
+          <td>${rank}</td>
+          <td>${entry.playerName}</td>
+          <td>${formatTime(entry.timeSeconds)}</td>
+          <td>${entry.difficulty}</td>
+          <td>${entry.hintsUsed}</td>
+        </tr>
+      `;
+    })
+    .join('');
+}
+
+function addScoreToLeaderboard(playerName, timeSeconds, difficulty, hintsUsedCount) {
+  const normalizedName = playerName && playerName.trim() ? playerName.trim() : 'Anonymous';
+  const newScore = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    playerName: normalizedName,
+    timeSeconds,
+    difficulty,
+    hintsUsed: hintsUsedCount
+  };
+
+  leaderboard = [...leaderboard, newScore]
+    .sort((first, second) => first.timeSeconds - second.timeSeconds)
+    .slice(0, 10);
+  saveLeaderboard();
+  renderLeaderboard();
+}
+
+function saveCompletedGame() {
+  const difficultySelect = document.getElementById('difficulty');
+  const difficulty = difficultySelect ? difficultySelect.value : 'medium';
+  const playerName = window.prompt('Enter your name for the leaderboard:', '');
+  if (playerName === null) {
+    return;
+  }
+
+  addScoreToLeaderboard(playerName, elapsedSeconds, difficulty, hintsUsed);
+  hasSavedScore = true;
+}
+
 async function newGame() {
+  hasSavedScore = false;
   startTimer();
 
   const difficultySelect = document.getElementById('difficulty');
@@ -274,6 +393,9 @@ async function checkSolution() {
     stopTimer();
     msg.style.color = '#388e3c';
     msg.innerText = 'Congratulations! You solved it!';
+    if (!hasSavedScore) {
+      saveCompletedGame();
+    }
   } else {
     msg.style.color = '#d32f2f';
     msg.innerText = 'Some cells are incorrect.';
@@ -326,6 +448,6 @@ window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
   document.getElementById('hint').addEventListener('click', useHint);
-  // initialize
+  loadLeaderboard();
   newGame();
 });
