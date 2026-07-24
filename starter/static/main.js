@@ -52,6 +52,11 @@ function startTimer() {
   }, 1000);
 }
 
+function getBoxToneClass(row, col) {
+  const boxIndex = Math.floor(row / 3) * 3 + Math.floor(col / 3);
+  return boxIndex % 2 === 0 ? 'box-tone-a' : 'box-tone-b';
+}
+
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
   boardDiv.innerHTML = '';
@@ -62,7 +67,7 @@ function createBoardElement() {
       const input = document.createElement('input');
       input.type = 'text';
       input.maxLength = 1;
-      input.className = 'sudoku-cell';
+      input.className = `sudoku-cell ${getBoxToneClass(i, j)}`;
       input.dataset.row = i;
       input.dataset.col = j;
       input.setAttribute('aria-invalid', 'false');
@@ -86,14 +91,15 @@ function renderPuzzle(puz) {
       const idx = i * SIZE + j;
       const val = puzzle[i][j];
       const inp = inputs[idx];
+      const toneClass = getBoxToneClass(i, j);
       if (val !== 0) {
         inp.value = val;
         inp.disabled = true;
-        inp.className = 'sudoku-cell prefilled';
+        inp.className = `sudoku-cell ${toneClass} prefilled`;
       } else {
         inp.value = '';
         inp.disabled = false;
-        inp.className = 'sudoku-cell';
+        inp.className = `sudoku-cell ${toneClass}`;
       }
       inp.setAttribute('aria-invalid', 'false');
     }
@@ -182,18 +188,19 @@ function applyConflictStyles(conflicts) {
   for (let idx = 0; idx < inputs.length; idx++) {
     const inp = inputs[idx];
     const hasIncorrect = inp.classList.contains('incorrect');
+    const toneClass = getBoxToneClass(Number(inp.dataset.row), Number(inp.dataset.col));
 
     if (inp.disabled) {
       if (inp.classList.contains('hinted')) {
-        inp.className = 'sudoku-cell hinted';
+        inp.className = `sudoku-cell ${toneClass} hinted`;
       } else {
-        inp.className = 'sudoku-cell prefilled';
+        inp.className = `sudoku-cell ${toneClass} prefilled`;
       }
       inp.setAttribute('aria-invalid', 'false');
       continue;
     }
 
-    inp.className = 'sudoku-cell';
+    inp.className = `sudoku-cell ${toneClass}`;
     if (hasIncorrect) {
       inp.classList.add('incorrect');
     }
@@ -433,7 +440,7 @@ async function useHint() {
   if (inp) {
     inp.value = data.value;
     inp.disabled = true;
-    inp.className = 'sudoku-cell hinted';
+    inp.className = `sudoku-cell ${getBoxToneClass(data.row, data.col)} hinted`;
     inp.setAttribute('aria-invalid', 'false');
     puzzle[data.row][data.col] = data.value;
   }
