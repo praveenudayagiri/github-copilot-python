@@ -8,6 +8,7 @@ from sudoku_logic import (
     create_empty_board,
     deep_copy,
     generate_puzzle,
+    get_hint,
     is_safe,
     count_solutions,
 )
@@ -83,3 +84,17 @@ def test_count_solutions_hard_puzzle_has_unique_solution():
     """Hard puzzles (fewer clues) should have exactly one solution."""
     puzzle, solution = generate_puzzle(clues=25)
     assert count_solutions(puzzle) == 1
+
+
+def test_get_hint_returns_first_empty_cell_and_solution_value():
+    board = create_empty_board()
+    solution = [[(row * 3 + row // 3 + col) % 9 + 1 for col in range(9)] for row in range(9)]
+
+    assert get_hint(board, solution) == (0, 0, 1)
+
+
+def test_get_hint_returns_none_when_board_has_no_empty_cells():
+    board = [[1 for _ in range(9)] for _ in range(9)]
+    solution = [[(row * 3 + row // 3 + col) % 9 + 1 for col in range(9)] for row in range(9)]
+
+    assert get_hint(board, solution) is None

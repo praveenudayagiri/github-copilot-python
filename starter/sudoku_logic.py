@@ -105,6 +105,22 @@ def remove_cells(board, clues):
                 # Restore the cell if removing it creates multiple or no solutions
                 board[row][col] = cell_value
 
+def is_complete_board(board, solution):
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] != solution[row][col]:
+                return False
+    return True
+
+
+def get_hint(board, solution):
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] == EMPTY:
+                return row, col, solution[row][col]
+    return None
+
+
 def generate_puzzle(clues=35):
     board = create_empty_board()
     fill_board(board)

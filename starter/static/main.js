@@ -2,6 +2,13 @@
 const SIZE = 9;
 let puzzle = [];
 
+function updateHintCount(count) {
+  const hintCount = document.getElementById('hint-count');
+  if (hintCount) {
+    hintCount.textContent = `Hints used: ${count}`;
+  }
+}
+
 function getBoardInputs() {
   const boardDiv = document.getElementById('sudoku-board');
   return boardDiv.getElementsByTagName('input');
@@ -139,7 +146,11 @@ function applyConflictStyles(conflicts) {
     const hasIncorrect = inp.classList.contains('incorrect');
 
     if (inp.disabled) {
-      inp.className = 'sudoku-cell prefilled';
+      if (inp.classList.contains('hinted')) {
+        inp.className = 'sudoku-cell hinted';
+      } else {
+        inp.className = 'sudoku-cell prefilled';
+      }
       inp.setAttribute('aria-invalid', 'false');
       continue;
     }
@@ -184,6 +195,7 @@ async function newGame() {
   const data = await res.json();
   difficultySelect.value = data.difficulty || 'medium';
   renderPuzzle(data.puzzle);
+  updateHintCount(0);
   document.getElementById('message').innerText = '';
 }
 
@@ -229,10 +241,52 @@ async function checkSolution() {
   }
 }
 
+async function useHint() {
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+  const board = [];
+  for (let i = 0; i < SIZE; i++) {
+    board[i] = [];
+    for (let j = 0; j < SIZE; j++) {
+      const idx = i * SIZE + j;
+      const val = inputs[idx].value;
+      board[i][j] = val ? parseInt(val, 10) : 0;
+    }
+  }
+
+  const res = await fetch('/hint', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({board})
+  });
+  const data = await res.json();
+  const msg = document.getElementById('message');
+  if (!res.ok) {
+    msg.style.color = '#d32f2f';
+    msg.innerText = data.message || data.error || 'Unable to provide hint.';
+    return;
+  }
+
+  const idx = data.row * SIZE + data.col;
+  const inp = inputs[idx];
+  if (inp) {
+    inp.value = data.value;
+    inp.disabled = true;
+    inp.className = 'sudoku-cell hinted';
+    inp.setAttribute('aria-invalid', 'false');
+    puzzle[data.row][data.col] = data.value;
+  }
+  updateHintCount(data.hint_count);
+  refreshConflictState();
+  msg.style.color = '#0f766e';
+  msg.innerText = 'Hint applied.';
+}
+
 // Wire buttons
 window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
+  document.getElementById('hint').addEventListener('click', useHint);
   // initialize
   newGame();
 });
