@@ -31,7 +31,7 @@ h1 {
     font-size: 20px;
     outline: none;
     background: #fafafa;
-    transition: background 0.2s;
+    transition: background 0.2s, box-shadow 0.2s;
 }
 
 .sudoku-cell:focus {
@@ -46,6 +46,17 @@ h1 {
 
 .sudoku-cell.incorrect {
     background: #ffcdd2;
+}
+
+.sudoku-cell.conflict {
+    background: #fff8e1;
+    outline: 3px solid #c62828;
+    outline-offset: -3px;
+    box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.sudoku-cell.conflict.incorrect {
+    background: #ffe6e6;
 }
 
 .sudoku-cell:nth-child(3),
@@ -82,4 +93,16 @@ button:hover {
     margin-left: 20px;
     font-size: 16px;
     color: #d32f2f;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
